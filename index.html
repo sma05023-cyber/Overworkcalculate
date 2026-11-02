@@ -69,9 +69,11 @@
         
         .input-group { margin-bottom: 20px; min-width: 0; }
         .input-group label { display: block; margin-bottom: 8px; color: var(--ink-2); font-size: 14px; font-weight: 700; }
-        .comma-input { text-align: right; font-family: inherit; font-weight: 600; }
-        input, select { width: 100%; padding: 10px 14px; background: var(--canvas); border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; box-sizing: border-box; transition: all 0.15s; color: var(--ink); }
+        
+        /* 폰트 일치 및 입력칸 스타일 */
+        input, select { font-family: inherit; width: 100%; padding: 10px 14px; background: var(--canvas); border: 1px solid var(--line); border-radius: 8px; font-size: 14.5px; box-sizing: border-box; transition: all 0.15s; color: var(--ink); }
         input:focus, select:focus { outline: none; background: var(--surface); border-color: var(--brand); box-shadow: 0 0 0 3px rgba(29,78,216,.12); }
+        .comma-input { text-align: right; font-weight: 600; }
         
         .calc-btn { width: 100%; padding: 16px 24px; background: var(--brand); border: 1px solid var(--brand); border-radius: var(--radius); color: white; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s ease; letter-spacing: -0.2px; }
         .calc-btn:hover { background: var(--brand-ink); }
@@ -86,9 +88,10 @@
         .instruction-list li::before { content: "•"; position: absolute; left: 6px; color: var(--brand); font-weight: bold; }
 
         .table-responsive { overflow-x: auto; margin-bottom: 20px; width: 100%; }
-        .bosu-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 800px; }
+        /* 금액 박스 잘림 방지 (너비 확장) */
+        .bosu-table { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 1500px; }
         .bosu-table th { background: var(--canvas); padding: 12px 8px; text-align: center; color: var(--ink); border: 1px solid var(--line); white-space: nowrap; font-weight: 700; }
-        .bosu-table td { padding: 10px 8px; border: 1px solid var(--line); color: var(--ink); word-break: keep-all; text-align: center; vertical-align: middle; }
+        .bosu-table td { padding: 10px 8px; border: 1px solid var(--line); color: var(--ink); word-break: keep-all; text-align: center; vertical-align: middle; min-width: 110px; }
         .bosu-table input, .bosu-table select { padding: 8px 10px; font-size: 13.5px; border-radius: 6px; border: 1px solid var(--line); width: 100%; background: var(--surface); }
         .bosu-table input:focus { border-color: var(--brand); box-shadow: none; }
         
@@ -139,6 +142,17 @@
                     
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:16px;">
                         <div class="input-group">
+                            <label>적용 연도</label>
+                            <select id="tong_year" onchange="autoFillTongJob()">
+                                <option value="2026" selected>2026년</option>
+                                <option value="2027">2027년</option>
+                                <option value="2028">2028년</option>
+                                <option value="2029">2029년</option>
+                                <option value="2030">2030년</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
                             <label>직종 선택 (자동완성)</label>
                             <select id="tong_job" onchange="autoFillTongJob()">
                                 <option value="">직종 선택</option>
@@ -177,10 +191,10 @@
                     <div class="instruction-box">
                         <div class="instruction-title">📋 사용 설명</div>
                         <ul class="instruction-list">
-                            <li>직종을 선택하고 성명 등 정보를 입력하면 <strong>실시간으로 아래에 시급이 자동 계산</strong>됩니다.</li>
+                            <li>적용 연도와 직종을 선택하고 성명 등 정보를 입력하면 <strong>실시간으로 아래에 시급이 자동 계산</strong>됩니다.</li>
                             <li>확인 후 맨 아래 <strong>[💾 저장하기]</strong> 버튼을 누르면 목록에 등록됩니다.</li>
-                            <li>근로시간 및 각 급여내역은 수기 조정이 가능합니다.<li>
-                            <li>※ <strong>[5시간->130시간]<strong>, <strong>[7시간->183시간<strong>], <strong>[8시간->209시간]<strong><li>
+                            <li>근로시간 및 각 급여내역은 수기 조정이 가능합니다.</li>
+                            <li>※ <strong>[5시간->130시간]</strong>, <strong>[7시간->183시간]</strong>, <strong>[8시간->209시간]</strong></li>
                             <li>※ 저장된 데이터는 엑셀 백업 기능을 통해 PC에 보관할 수 있습니다.</li>
                         </ul>
                     </div>
@@ -212,7 +226,7 @@
                     </div>
                     <div class="table-responsive">
                         <table class="bosu-table" id="tongSavedTable">
-                            <thead><tr><th>직종</th><th>성명</th><th>기본급</th><th>월급여액</th><th>통상시급</th><th>수정</th><th>삭제</th></tr></thead>
+                            <thead><tr><th>연도</th><th>직종</th><th>성명</th><th>기본급</th><th>월급여액</th><th>통상시급</th><th>수정</th><th>삭제</th></tr></thead>
                             <tbody id="tongSavedBody"></tbody>
                         </table>
                     </div>
@@ -361,33 +375,37 @@
     }
 
     // ==========================================
-    // ① 통상임금 계산기 로직
+    // ① 통상임금 계산기 로직 (연도별 데이터 구조)
     // ==========================================
     const jobData = {
-        '영양사':{basic:2344500,meal:160000,risk:70000,license:117230,hygiene:0,spec1:50000,spec1Label:'식생활지도수당',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '전문상담사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '운동부지도자':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '임상심리사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '교무행정실무원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '교무행정사':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '과학실험실무원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '전산실무원':{basic:2144500,meal:160000,risk:0,license:107230,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '특수실무원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:20000,spec1Label:'특수교육지원수당',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '조리사':{basic:2144500,meal:160000,risk:70000,license:107230,hygiene:50000,spec1:0,spec1Label:'',spec2:70000,spec2Label:'특별근무수당',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '조리실무사':{basic:2144500,meal:160000,risk:70000,license:0,hygiene:50000,spec1:0,spec1Label:'',spec2:50000,spec2Label:'특별근무수당',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '행정실무원(월급제)':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:50000,spec1Label:'행정업무수당',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '시설관리원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '초등돌봄전담사':{basic:1340310,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:130},
-        '환경실무원':{basic:1340310,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:500000,hours:130},
-        '초등스포츠강사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:50000,travel:80000,holiday:2144500,bonus:1000000,hours:209},
-        '영어회화전문강사':{basic:2506000,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
-        '교육복지사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209}
+        '2026': {
+            '영양사':{basic:2344500,meal:160000,risk:70000,license:117230,hygiene:0,spec1:50000,spec1Label:'식생활지도수당',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '전문상담사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '운동부지도자':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '임상심리사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '교무행정실무원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '교무행정사':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '과학실험실무원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '전산실무원':{basic:2144500,meal:160000,risk:0,license:107230,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '특수실무원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:20000,spec1Label:'특수교육지원수당',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '조리사':{basic:2144500,meal:160000,risk:70000,license:107230,hygiene:50000,spec1:0,spec1Label:'',spec2:70000,spec2Label:'특별근무수당',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '조리실무사':{basic:2144500,meal:160000,risk:70000,license:0,hygiene:50000,spec1:0,spec1Label:'',spec2:50000,spec2Label:'특별근무수당',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '행정실무원(월급제)':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:50000,spec1Label:'행정업무수당',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '시설관리원':{basic:2144500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '초등돌봄전담사':{basic:1340310,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:130},
+            '환경실무원':{basic:1340310,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:500000,hours:130},
+            '초등스포츠강사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:50000,travel:80000,holiday:2144500,bonus:1000000,hours:209},
+            '영어회화전문강사':{basic:2506000,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209},
+            '교육복지사':{basic:2344500,meal:160000,risk:0,license:0,hygiene:0,spec1:0,spec1Label:'',spec2:0,spec2Label:'',train:0,travel:0,holiday:2144500,bonus:1000000,hours:209}
+        }
+        // 향후 2027년, 2028년 데이터 확정 시 위 포맷에 맞춰 추가하시면 됩니다.
     };
     
     // 탭 1 상단 폼 초기화 함수
     function resetTongForm() {
         if(!confirm('입력된 내용을 초기화하시겠습니까?\n(하단에 저장된 시급 목록은 지워지지 않습니다)')) return;
         
+        document.getElementById('tong_year').value = '2026';
         document.getElementById('tong_job').value = '';
         document.getElementById('tong_name').value = '';
         document.getElementById('tong_years').value = '0';
@@ -419,9 +437,23 @@
     }
     
     function autoFillTongJob() {
-        const d = jobData[document.getElementById('tong_job').value]; 
-        if(!d) return;
+        const year = document.getElementById('tong_year').value;
+        const job = document.getElementById('tong_job').value;
         
+        // 선택한 연도의 데이터가 없거나 해당 직종 데이터가 없으면 모두 0으로 초기화
+        if (!jobData[year] || !jobData[year][job]) {
+            ['basic','meal','tenure','risk','license','hygiene','special1','special2','training','travel','holiday','bonus'].forEach(k => { 
+                if(document.getElementById('tong_'+k)) document.getElementById('tong_'+k).value = '0'; 
+            });
+            document.getElementById('tong_hours').value = '209';
+            if(document.getElementById('th_spec1')) document.getElementById('th_spec1').textContent = '특수업무수당';
+            if(document.getElementById('th_spec2')) document.getElementById('th_spec2').textContent = '특별근무수당';
+            calcTongImgeum();
+            return;
+        }
+        
+        // 정상적으로 데이터가 있을 경우 자동 완성
+        const d = jobData[year][job]; 
         const years = unformatComma(document.getElementById('tong_years').value);
         ['basic','meal','risk','license','hygiene','training','travel','holiday','bonus','hours'].forEach(k => { 
             if(document.getElementById('tong_'+k)) document.getElementById('tong_'+k).value = formatComma(d[k]); 
@@ -432,6 +464,7 @@
         
         if(document.getElementById('th_spec1')) document.getElementById('th_spec1').textContent = d.spec1Label || '특수업무수당';
         if(document.getElementById('th_spec2')) document.getElementById('th_spec2').textContent = d.spec2Label || '특별근무수당';
+        
         calcTongImgeum();
     }
 
@@ -461,8 +494,11 @@
         document.getElementById('resHours').textContent = hours + '시간';
         
         const _job = document.getElementById('tong_job').value;
-        const _jd = jobData[_job] || {};
+        const _year = document.getElementById('tong_year').value;
+        const _jd = (jobData[_year] && jobData[_year][_job]) ? jobData[_year][_job] : {};
+        
         window._lastTongResult = {
+            year: _year,
             name: document.getElementById('tong_name').value.trim(), job: _job,
             basic, meal, tenure, risk, license, hygiene, spec1, spec2, train, travel, holiday, bonus, bonusYn, hours,
             monthly: roundedMonthly, hourly, spec1Label: _jd.spec1Label || '특수업무수당', spec2Label: _jd.spec2Label || '특별근무수당'
@@ -517,6 +553,7 @@
         data.forEach((r, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td>${r.year ? r.year + '년' : '2026년'}</td>
                 <td>${r.job || '-'}</td>
                 <td style="font-weight: 800;">${r.name || '-'}</td>
                 <td>${formatComma(r.basic || 0)}</td>
@@ -531,6 +568,8 @@
 
     function editTong(i) {
         const d = getTongSaved()[i]; if(!d) return;
+        
+        document.getElementById('tong_year').value = d.year || '2026';
         document.getElementById('tong_name').value = d.name||''; 
         document.getElementById('tong_job').value = d.job||'';
         document.getElementById('tong_basic').value = formatComma(d.basic||0); 
